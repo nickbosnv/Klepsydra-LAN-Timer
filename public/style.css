@@ -53,5 +53,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .net-note code{display:block;margin:8px 0;padding:8px;border-radius:6px;background:#0B1A20;color:var(--sand);font:12px Consolas,monospace;overflow-wrap:anywhere;user-select:all}
 .login-card{width:min(520px,100%)}
 button.toggle.on{background:var(--accent);border-color:var(--accent);color:#06161B;font-weight:700}
-.brand .mark{width:28px;height:28px;border-radius:7px;flex:none}
-.login-logo{display:block;width:min(260px,70%);height:auto;margin:0 auto;border-radius:14px}
+/* Λογότυπο: κλεψύδρα αριστερά, όνομα δεξιά (όπως στο λογότυπο: Klepsydra + Timer σε άμμο) */
+.brand{gap:10px}.brand .mark{width:36px;height:36px;border-radius:9px;flex:none}
+.brand-text{font-family:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1;color:var(--text)}.brand-text b{font-weight:800;color:var(--sand)}
+.brand-lg{justify-content:center;gap:14px;margin-bottom:4px}.brand-lg .mark{width:72px;height:72px;border-radius:18px}.brand-lg .brand-text{font-size:38px}
