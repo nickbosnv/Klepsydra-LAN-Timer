@@ -78,7 +78,9 @@ const COLORS = ["#ffffff", "#22c55e", "#ef4444", "#f59e0b", "#60a5fa"];
 const MAX_MS = 24 * 60 * 60 * 1000;
 // Ρυθμίσεις ανά χρονόμετρο: κίτρινο/κόκκινο όταν απομένουν <= δευτερόλεπτα (0 = απενεργοποιημένο), τοπική ώρα, γραμμή προόδου, flash στο μηδέν.
 const MAX_TIMERS = 200;
-const TIMER_DEFAULTS = { speaker: "", yellowSec: 60, redSec: 15, showClock: false, showProgress: true, flashOnZero: true };
+const TIMER_DEFAULTS = { speaker: "", yellowSec: 60, redSec: 15, showClock: false, showProgress: true, flashOnZero: true, hidden: false };
+// Νέα χρονόμετρα παίρνουν τα γενικά όρια χρώματος από τις ρυθμίσεις.
+const timerBase = () => ({ ...TIMER_DEFAULTS, yellowSec: state.settings.defaultYellowSec, redSec: state.settings.defaultRedSec });
 
 const defaultState = () => ({
   timers: [
@@ -110,7 +112,9 @@ if (!state.defaultsV3) {
   for (const t of state.timers) t.flashOnZero = true;
   state.defaultsV3 = true;
 }
-state.settings = { activeTimerId: state.settings.activeTimerId || null, blackout: state.settings.blackout === true, clockOnly: state.settings.clockOnly === true };
+const okSec = (v, d) => Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 86400 ? Math.round(Number(v)) : d;
+state.settings = { activeTimerId: state.settings.activeTimerId || null, blackout: state.settings.blackout === true, clockOnly: state.settings.clockOnly === true,
+  defaultYellowSec: okSec(state.settings.defaultYellowSec, TIMER_DEFAULTS.yellowSec), defaultRedSec: okSec(state.settings.defaultRedSec, TIMER_DEFAULTS.redSec) };
 if (!state.timers.some(t => t.id === state.settings.activeTimerId)) state.settings.activeTimerId = state.timers[0]?.id || null;
 
 function writeState() {
@@ -141,7 +145,7 @@ function buildState(admin, now = Date.now()) {
       const left = remaining(t, now);
       return {
         id: t.id, name: t.name, speaker: t.speaker, durationMs: t.durationMs, remainingMs: left, running: t.running, order: t.order, finished: !t.running && left <= 0, expiredAt: !t.running && left <= 0 ? (t.expiredAt || null) : null,
-        yellowSec: t.yellowSec, redSec: t.redSec, showClock: t.showClock, showProgress: t.showProgress, flashOnZero: t.flashOnZero
+        yellowSec: t.yellowSec, redSec: t.redSec, showClock: t.showClock, showProgress: t.showProgress, flashOnZero: t.flashOnZero, hidden: t.hidden === true
       };
     }),
     messages: (admin ? state.messages : state.messages.filter(m => m.visible)).map(m => ({ ...m })),
@@ -273,7 +277,7 @@ app.post("/api/timers", adminOnly, (req, res) => {
   const speaker = safeText(req.body?.speaker, 80);
   const durationMs = msFromInput(req.body?.seconds ?? 600);
   if (durationMs === null || durationMs < 1000) return res.status(400).json({ error: "Ο χρόνος πρέπει να είναι τουλάχιστον 1 δευτερόλεπτο." });
-  const timer = { ...TIMER_DEFAULTS, id: crypto.randomUUID(), name, speaker, durationMs, remainingMs: durationMs, running: false, endAt: null, order: state.timers.length };
+  const timer = { ...timerBase(), id: crypto.randomUUID(), name, speaker, durationMs, remainingMs: durationMs, running: false, endAt: null, order: state.timers.length };
   state.timers.push(timer);
   if (!state.settings.activeTimerId) state.settings.activeTimerId = timer.id;
   saveState(); broadcast(); res.json(stateFor(req));
@@ -292,11 +296,89 @@ app.post("/api/timers/import", adminOnly, (req, res) => {
     let name = safeText(r?.title, 120), speaker = safeText(r?.speaker, 80);
     if (!name) { name = speaker; speaker = ""; } // γραμμή χωρίς τίτλο: ό,τι υπάρχει γίνεται το όνομα
     if (!name) name = `Timer ${base + i + 1}`;
-    made.push({ ...TIMER_DEFAULTS, id: crypto.randomUUID(), name, speaker, durationMs: ms, remainingMs: ms, running: false, endAt: null, order: base + i });
+    made.push({ ...timerBase(), id: crypto.randomUUID(), name, speaker, durationMs: ms, remainingMs: ms, running: false, endAt: null, order: base + i });
   }
   if (replace) state.timers = [];
   state.timers.push(...made);
   if (!state.timers.some(t => t.id === state.settings.activeTimerId)) state.settings.activeTimerId = [...state.timers].sort((a, b) => a.order - b.order)[0]?.id || null;
+  saveState(); broadcast(); res.json(stateFor(req));
+});
+// --- Γενικά όρια χρώματος, επαναφορά, επόμενο χρονόμετρο, μαζικές ενέργειες ---
+const sortedTimers = () => [...state.timers].sort((a, b) => a.order - b.order);
+const renumber = () => { sortedTimers().forEach((t, i) => { t.order = i; }); };
+function fixActive() {
+  if (!state.timers.some(t => t.id === state.settings.activeTimerId)) {
+    const list = sortedTimers();
+    state.settings.activeTimerId = (list.find(t => !t.hidden) || list[0])?.id || null;
+  }
+}
+function parseThresholds(yellow, red) {
+  const y = Number(yellow), r = Number(red);
+  if (![y, r].every(n => Number.isFinite(n) && n >= 0 && n <= 86400)) return "Μη έγκυρο όριο κίτρινου/κόκκινου.";
+  if (Math.round(y) > 0 && Math.round(r) > Math.round(y)) return "Το κόκκινο πρέπει να είναι ίσο ή μικρότερο από το κίτρινο.";
+  return null;
+}
+// Αποθηκεύει τα γενικά όρια και τα εφαρμόζει σε ΟΛΑ τα υπάρχοντα χρονόμετρα.
+app.post("/api/timers/defaults", adminOnly, (req, res) => {
+  const err = parseThresholds(req.body?.yellowSec, req.body?.redSec);
+  if (err) return res.status(400).json({ error: err });
+  state.settings.defaultYellowSec = Math.round(Number(req.body.yellowSec));
+  state.settings.defaultRedSec = Math.round(Number(req.body.redSec));
+  for (const t of state.timers) { t.yellowSec = state.settings.defaultYellowSec; t.redSec = state.settings.defaultRedSec; }
+  saveState(); broadcast(); res.json(stateFor(req));
+});
+// Καθαρίζει τα πάντα και αφήνει μόνο τα 3 αρχικά χρονόμετρα.
+app.post("/api/timers/reset-defaults", adminOnly, (req, res) => {
+  state.timers = defaultState().timers.map(t => ({ ...timerBase(), ...t }));
+  state.settings.activeTimerId = state.timers[0].id;
+  saveState(); broadcast(); res.json(stateFor(req));
+});
+// Επόμενο: το τρέχον ενεργό σταματά και κρύβεται, ενεργό γίνεται το επόμενο ορατό (δεν ξεκινά αυτόματα).
+app.post("/api/timers/next", adminOnly, (req, res) => {
+  const list = sortedTimers();
+  const cur = list.findIndex(t => t.id === state.settings.activeTimerId);
+  const next = list.slice(cur + 1).find(t => !t.hidden);
+  if (!next) return res.status(400).json({ error: "Δεν υπάρχει επόμενο χρονόμετρο." });
+  const t = list[cur];
+  if (t) { t.remainingMs = remaining(t); t.running = false; t.endAt = null; t.expiredAt = null; t.hidden = true; }
+  state.settings.activeTimerId = next.id;
+  saveState(); broadcast(); res.json(stateFor(req));
+});
+// Μαζική ενέργεια: { ids, action: "delete" | "hide" | "show" | "update", patch? }. Ελέγχεται όλο πριν αλλάξει οτιδήποτε.
+app.post("/api/timers/bulk", adminOnly, (req, res) => {
+  const ids = req.body?.ids, action = req.body?.action;
+  if (!Array.isArray(ids) || !ids.length || ids.length > 500) return res.status(400).json({ error: "Δεν επιλέχθηκαν χρονόμετρα." });
+  const targets = state.timers.filter(t => ids.includes(t.id));
+  if (!targets.length) return res.status(400).json({ error: "Τα χρονόμετρα δεν βρέθηκαν." });
+  if (action === "delete") {
+    state.timers = state.timers.filter(t => !ids.includes(t.id));
+    renumber(); fixActive();
+  } else if (action === "hide" || action === "show") {
+    for (const t of targets) {
+      if (action === "hide" && t.running) { t.remainingMs = remaining(t); t.running = false; t.endAt = null; }
+      t.hidden = action === "hide";
+    }
+    if (action === "hide" && targets.some(t => t.id === state.settings.activeTimerId)) state.settings.activeTimerId = null; // ενεργό γίνεται το πρώτο ορατό
+    fixActive();
+  } else if (action === "update") {
+    const p = req.body?.patch || {};
+    let ms = null;
+    if (p.seconds !== undefined) {
+      ms = msFromInput(p.seconds);
+      if (ms === null || ms < 1000) return res.status(400).json({ error: "Ο χρόνος πρέπει να είναι τουλάχιστον 1 δευτερόλεπτο." });
+    }
+    const has = k => p[k] !== undefined;
+    for (const t of targets) {
+      const err = parseThresholds(has("yellowSec") ? p.yellowSec : t.yellowSec, has("redSec") ? p.redSec : t.redSec);
+      if (err) return res.status(400).json({ error: err });
+    }
+    for (const t of targets) {
+      if (has("yellowSec")) t.yellowSec = Math.round(Number(p.yellowSec));
+      if (has("redSec")) t.redSec = Math.round(Number(p.redSec));
+      for (const k of ["showClock", "showProgress", "flashOnZero"]) if (typeof p[k] === "boolean") t[k] = p[k];
+      if (ms !== null && ms !== t.durationMs) { t.durationMs = ms; t.remainingMs = ms; t.running = false; t.endAt = null; t.expiredAt = null; }
+    }
+  } else return res.status(400).json({ error: "Άγνωστη ενέργεια." });
   saveState(); broadcast(); res.json(stateFor(req));
 });
 // Σημείωση: το /api/timers/reorder πρέπει να δηλωθεί πριν από routes με :id ώστε να μη μπερδεύεται.
