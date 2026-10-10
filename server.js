@@ -333,7 +333,7 @@ app.post("/api/timers/reset-defaults", adminOnly, (req, res) => {
   state.settings.activeTimerId = state.timers[0].id;
   saveState(); broadcast(); res.json(stateFor(req));
 });
-// Επόμενο: το τρέχον ενεργό σταματά και κρύβεται, ενεργό γίνεται το επόμενο ορατό (δεν ξεκινά αυτόματα).
+// Επόμενο: το τρέχον ενεργό σταματά και κρύβεται, ενεργό γίνεται το επόμενο ορατό και ξεκινά αμέσως.
 app.post("/api/timers/next", adminOnly, (req, res) => {
   const list = sortedTimers();
   const cur = list.findIndex(t => t.id === state.settings.activeTimerId);
@@ -342,6 +342,10 @@ app.post("/api/timers/next", adminOnly, (req, res) => {
   const t = list[cur];
   if (t) { t.remainingMs = remaining(t); t.running = false; t.endAt = null; t.expiredAt = null; t.hidden = true; }
   state.settings.activeTimerId = next.id;
+  if (!next.running) { // ξεκινά από εκεί που είχε μείνει· αν είχε λήξει, από την αρχή
+    if (next.remainingMs <= 0) next.remainingMs = next.durationMs;
+    next.expiredAt = null; next.endAt = Date.now() + next.remainingMs; next.running = true;
+  }
   saveState(); broadcast(); res.json(stateFor(req));
 });
 // Μαζική ενέργεια: { ids, action: "delete" | "hide" | "show" | "update", patch? }. Ελέγχεται όλο πριν αλλάξει οτιδήποτε.
