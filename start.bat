@@ -1,14 +1,9 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if not exist ".env" (
-  echo ERROR: Missing .env file.
-  echo Copy .env.example to .env and set your PIN first.
-  pause
-  exit /b 1
-)
+rem Χωρίς .env ο server ανοίγει σελίδα πρώτης ρύθμισης (ορισμός PIN) στον browser.
 set "PORT=auto"
-for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
+if exist ".env" for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
   if /i "%%a"=="PORT" set "PORT=%%b"
 )
 set "PORT=%PORT: =%"

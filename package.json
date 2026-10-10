@@ -7,8 +7,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js",
-    "build:win": "pkg . --targets node22-win-x64 --output dist/Klepsydra.exe"
+    "check": "node --check server.js && node --check app.js",
+    "build:win": "pkg . --targets node22-win-x64 --output dist/Klepsydra.exe && node scripts/gui-subsystem.js dist/Klepsydra.exe"
   },
   "engines": {
     "node": ">=18"

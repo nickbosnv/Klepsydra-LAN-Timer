@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Klepsydra Timer — Αρχική ρύθμιση</title><link rel="icon" href="/favicon.ico" sizes="any"><link rel="stylesheet" href="/style.css"></head>
+<body>
+<div class="login-wrap"><form id="f" class="login-card">
+<div class="brand brand-lg"><img class="mark" src="/img/icon.png" width="72" height="72" alt=""><span class="brand-text">Klepsydra<b>Timer</b></span></div>
+<h1 style="margin-top:18px">Καλώς ήρθες</h1>
+<p class="muted">Πρώτη εκκίνηση: όρισε ένα PIN για το Dashboard. Θα το ζητάει κάθε φορά που μπαίνεις στη διαχείριση.</p>
+<label for="pin">PIN (τουλάχιστον 4 χαρακτήρες)</label><input id="pin" type="password" autocomplete="new-password" required autofocus minlength="4" maxlength="64">
+<label for="pin2" style="margin-top:12px">Επανάληψη PIN</label><input id="pin2" type="password" autocomplete="new-password" required minlength="4" maxlength="64">
+<button class="primary" id="go" style="width:100%;margin-top:14px">Αποθήκευση και έναρξη</button>
+<div id="err" class="notice" role="alert"></div>
+<p class="muted small">Το PIN αποθηκεύεται στο αρχείο <b>.env</b> δίπλα στο πρόγραμμα. Μην το κοινοποιείς.</p>
+</form></div>
+<script>
+const $=id=>document.getElementById(id);
+$("f").addEventListener("submit",async e=>{
+ e.preventDefault();$("err").textContent="";
+ if($("pin").value!==$("pin2").value){$("err").textContent="Τα δύο PIN δεν ταιριάζουν.";return;}
+ $("go").disabled=true;
+ try{
+  const r=await fetch("/api/setup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("pin").value})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||"Κάτι πήγε στραβά.");
+  $("go").textContent="Ξεκινά ο server…";
+  // Ο server ξανανοίγει στο ίδιο port· όταν απαντήσει, πηγαίνουμε στο Dashboard.
+  for(let i=0;i<40;i++){
+   await new Promise(r=>setTimeout(r,500));
+   try{const s=await fetch("/api/session",{cache:"no-store"});if(s.ok&&(await s.json()).authenticated!==undefined){location.href="/admin";return;}}catch{}
+  }
+  $("err").textContent="Ο server αργεί να ξεκινήσει. Άνοιξε το Dashboard από το εικονίδιο στην περιοχή ειδοποιήσεων.";
+ }catch(err){$("err").textContent=err.message;$("go").disabled=false;}
+});
+</script></body></html>

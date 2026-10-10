@@ -12,15 +12,6 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-if not exist ".env" (
-  copy ".env.example" ".env" >nul
-  echo Created .env from example.
-  echo IMPORTANT: edit .env now and set your own DASHBOARD_PIN (SESSION_SECRET is optional).
-  notepad ".env"
-  echo After saving .env, run build-win.bat again.
-  pause
-  exit /b 0
-)
 if not exist "node_modules" (
   echo Installing dependencies. Internet is required for this first build.
   call npm install
@@ -34,10 +25,12 @@ if not exist "dist" mkdir "dist"
 echo Building standalone Windows executable...
 call npx pkg . --targets node22-win-x64 --output dist\Klepsydra.exe
 if errorlevel 1 goto fail
+node scripts\gui-subsystem.js dist\Klepsydra.exe
+if errorlevel 1 goto fail
 echo.
 echo BUILD COMPLETE: %CD%\dist\Klepsydra.exe
-echo Copy .env and the data folder next to the EXE before distributing it.
-echo Do not share your .env file.
+echo Give only Klepsydra.exe to the user. On first run it asks for a PIN and creates its own .env.
+echo Do not share your own .env file.
 pause
 exit /b 0
 :fail
