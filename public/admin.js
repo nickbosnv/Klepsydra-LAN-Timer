@@ -69,6 +69,7 @@ function render(){
  const tSig=JSON.stringify([s.activeTimerId,timers.map(t=>[t.id,t.name,t.speaker,t.durationMs,t.running,t.finished,t.order,t.hidden]),getDur("step"),[...selected]]);
  if(tSig!==timersSig){timersSig=tSig;$("timers").innerHTML=timersMarkup(timers,s.activeTimerId);}
  updateSelBar();
+ $("clockBtn").classList.toggle("on",!!s.showClock);$("clockBtn").setAttribute("aria-pressed",String(!!s.showClock));
  if(document.activeElement!==$("blackout"))$("blackout").checked=!!s.blackout;
  if(document.activeElement!==$("clockOnly"))$("clockOnly").checked=!!s.clockOnly;
  const mSig=JSON.stringify(current.messages);
@@ -98,6 +99,7 @@ $("addTimer").addEventListener("submit",async e=>{e.preventDefault();try{await a
 $("blackout").onchange=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({blackout:$("blackout").checked})});}catch(e){alert(e.message);}};
 $("clockOnly").onchange=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({clockOnly:$("clockOnly").checked})});}catch(e){alert(e.message);}};
 $("flashBtn").onclick=async()=>{const b=$("flashBtn");b.disabled=true;setTimeout(()=>{b.disabled=false;},2800);try{await api("/api/flash",{method:"POST"});}catch(e){b.disabled=false;alert(e.message);}};
+$("clockBtn").onclick=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({showClock:!current.settings.showClock})});}catch(e){alert(e.message);}};
 $("sCancel").onclick=()=>$("timerDlg").close();
 $("timerForm").addEventListener("submit",async e=>{
  e.preventDefault();

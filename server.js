@@ -113,7 +113,7 @@ if (!state.defaultsV3) {
   state.defaultsV3 = true;
 }
 const okSec = (v, d) => Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 86400 ? Math.round(Number(v)) : d;
-state.settings = { activeTimerId: state.settings.activeTimerId || null, blackout: state.settings.blackout === true, clockOnly: state.settings.clockOnly === true,
+state.settings = { activeTimerId: state.settings.activeTimerId || null, blackout: state.settings.blackout === true, clockOnly: state.settings.clockOnly === true, showClock: state.settings.showClock === true,
   defaultYellowSec: okSec(state.settings.defaultYellowSec, TIMER_DEFAULTS.yellowSec), defaultRedSec: okSec(state.settings.defaultRedSec, TIMER_DEFAULTS.redSec) };
 if (!state.timers.some(t => t.id === state.settings.activeTimerId)) state.settings.activeTimerId = state.timers[0]?.id || null;
 
@@ -456,6 +456,7 @@ app.patch("/api/settings", adminOnly, (req, res) => {
   if (state.timers.some(t => t.id === b.activeTimerId)) state.settings.activeTimerId = b.activeTimerId;
   if (typeof b.blackout === "boolean") state.settings.blackout = b.blackout;
   if (typeof b.clockOnly === "boolean") state.settings.clockOnly = b.clockOnly;
+  if (typeof b.showClock === "boolean") state.settings.showClock = b.showClock;
   saveState(); broadcast(); res.json(stateFor(req));
 });
 app.post("/api/messages", adminOnly, (req, res) => {

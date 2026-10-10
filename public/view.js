@@ -22,14 +22,14 @@ function render(){
  }
  if(html!==lastHtml){$("main").innerHTML=html;lastHtml=html;}
  $("main").classList.toggle("has-msg",!state.settings.blackout&&msgs.length>0);
- $("clock").hidden=state.settings.clockOnly||!(t&&t.showClock);
+ $("clock").hidden=state.settings.clockOnly||!(state.settings.showClock||(t&&t.showClock));
  tick();
 }
 function tick(){
  if(!state)return;const t=activeTimer();
  const big=document.querySelector("[data-clock]");if(big)big.textContent=new Date().toLocaleTimeString("el-GR",{hour12:false});
+ if(!$("clock").hidden)$("clock").textContent=new Date().toLocaleTimeString("el-GR",{hour12:false});
  if(!t)return;
- if(t.showClock)$("clock").textContent=new Date().toLocaleTimeString("el-GR",{hour12:false});
  const el=document.querySelector("[data-tid]");$("water").hidden=!el||!t.showProgress;if(!el)return;
  const ms=liveRemaining(t,state),ov=ms===0?overtimeMs(t,state):-1,time=el.querySelector("[data-time]"),txt=ov>=1000?fmtOver(ov):fmt(ms);if(time.textContent!==txt)time.textContent=txt;
  const bar=el.querySelector("[data-bar]");if(bar)bar.style.width=(100-(t.durationMs?Math.max(0,Math.min(100,ms/t.durationMs*100)):0))+"%";

@@ -52,3 +52,4 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .net-note{margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-size:13px;line-height:1.5;color:var(--text)}
 .net-note code{display:block;margin:8px 0;padding:8px;border-radius:6px;background:#0B1A20;color:var(--sand);font:12px Consolas,monospace;overflow-wrap:anywhere;user-select:all}
 .login-card{width:min(520px,100%)}
+button.toggle.on{background:var(--accent);border-color:var(--accent);color:#06161B;font-weight:700}
