@@ -57,3 +57,4 @@ button.toggle.on{background:var(--accent);border-color:var(--accent);color:#0616
 .brand{gap:10px}.brand .mark{width:36px;height:36px;border-radius:9px;flex:none}
 .brand-text{font-family:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1;color:var(--text)}.brand-text b{font-weight:800;color:var(--sand)}
 .brand-lg{justify-content:center;gap:14px;margin-bottom:4px}.brand-lg .mark{width:72px;height:72px;border-radius:18px}.brand-lg .brand-text{font-size:38px}
+button.pause{background:#FACC15;border-color:#FACC15;color:#1a1a1a;font-weight:700}button.reset{background:#F27A1A;border-color:#F27A1A;color:#1a1a1a;font-weight:700}
