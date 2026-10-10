@@ -1,4 +1,9 @@
-<p align="center"><img src="public/img/logo.png" alt="Klepsydra Timer" width="320"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/img/logo-dark.png">
+    <img src="public/img/logo.png" alt="Klepsydra Timer" width="320">
+  </picture>
+</p>
 
 # Klepsydra LAN Timer — Windows
 
