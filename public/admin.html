@@ -6,8 +6,8 @@
 <header class="app-header"><div><div class="brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c3.6 4.7 6 7.9 6 11.2a6 6 0 0 1-12 0C6 9.9 8.4 6.700 12 2z"/></svg><span>Klepsydra</span> Timer</div><div class="muted small">Διαχείριση χρονομέτρων</div></div><div class="header-actions"><a href="/view" target="_blank" rel="noopener"><button>Άνοιγμα View ↗</button></a><button id="logout">Έξοδος</button></div></header>
 <main class="page two-col">
 <section class="grid">
-<div class="panel"><h2 class="section-title">Προσθήκη χρονομέτρου</h2><form id="addTimer" class="form-grid"><div><label>Όνομα</label><input id="newName" maxlength="60" placeholder="π.χ. Ομιλία 1"></div><div><label>Διάρκεια</label><div class="dur" data-dur="newDur"></div></div><button class="primary">+ Προσθήκη</button></form></div>
-<div class="panel"><div class="row between"><h2 class="section-title" style="margin:0">Χρονόμετρα</h2><span id="timerCount" class="pill">0</span></div><p class="muted small">Ο χρόνος μετράει στον server, όχι ξεχωριστά σε κάθε browser.</p><div class="row wrap" style="margin-bottom:10px"><label style="margin:0">Βήμα στα +/−:</label><div class="dur" data-dur="step"></div></div><div id="timers" class="timer-list"></div></div>
+<div class="panel"><h2 class="section-title">Προσθήκη χρονομέτρου</h2><form id="addTimer" class="form-grid"><div><label>Ομιλητής (προαιρετικό)</label><input id="newSpeaker" maxlength="80" placeholder="π.χ. Μαρία Παπαδοπούλου"></div><div><label>Τίτλος ομιλίας / όνομα</label><input id="newName" maxlength="120" placeholder="π.χ. Ομιλία 1"></div><div><label>Διάρκεια</label><div class="dur" data-dur="newDur"></div></div><button class="primary">+ Προσθήκη</button></form></div>
+<div class="panel"><div class="row between"><h2 class="section-title" style="margin:0">Χρονόμετρα</h2><div class="row"><button id="impOpen">Εισαγωγή προγράμματος</button><span id="timerCount" class="pill">0</span></div></div><p class="muted small">Ο χρόνος μετράει στον server, όχι ξεχωριστά σε κάθε browser.</p><div class="row wrap" style="margin-bottom:10px"><label style="margin:0">Βήμα στα +/−:</label><div class="dur" data-dur="step"></div></div><div id="timers" class="timer-list"></div></div>
 </section>
 <aside class="grid">
 <div class="panel"><h2 class="section-title">Οθόνες θεατών</h2><p class="muted small" style="margin-top:0">Οι θεατές βλέπουν το <b>ενεργό χρονόμετρο</b> (αυτό που έχει την ένδειξη «Ενεργό»). Η Έναρξη ενός χρονομέτρου το κάνει ενεργό και σταματά τα υπόλοιπα.</p><button id="flashBtn" class="primary" style="margin-bottom:12px;width:100%">⚡ Flash ×3 στις οθόνες</button><div class="grid"><label class="checkbox"><input type="checkbox" id="clockOnly"> Μόνο τοπική ώρα (χωρίς χρονόμετρο)</label><label class="checkbox"><input type="checkbox" id="blackout"> Blackout (μαύρη οθόνη)</label></div></div>
@@ -15,8 +15,20 @@
 <div class="panel"><h2 class="section-title">Σύνδεση θεατών (QR)</h2><div id="ipWrap"><label for="ipSelect">Διεύθυνση (IP) του laptop για το QR</label><select id="ipSelect"></select></div><div id="qr" style="background:#fff;border-radius:8px;padding:6px;width:min(240px,100%);margin-top:12px"></div><div id="joinUrl" class="small" style="overflow-wrap:anywhere;margin-top:8px"></div><p class="small" style="margin-top:10px">Οι θεατές σκανάρουν το QR και βλέπουν το <b>ενεργό χρονόμετρο</b> και τα εμφανή μηνύματα, χωρίς κωδικό.</p><div class="notice" style="color:#fbbf24;min-height:0">⚠ Ο υπολογιστής και οι συσκευές των θεατών πρέπει να είναι στο ίδιο <b>ιδιωτικό δίκτυο</b> (Wi-Fi/LAN). Στα Windows το δίκτυο πρέπει να είναι σε προφίλ <b>Private</b> και όχι Public, αλλιώς το firewall μπλοκάρει τη σύνδεση. Μην το χρησιμοποιείς σε δημόσιο Wi-Fi.</div><div id="noIp" class="notice" hidden>Δεν βρέθηκε ιδιωτική διεύθυνση δικτύου. Συνδέσου σε Wi-Fi/LAN και ανανέωσε τη σελίδα.</div></div>
 <div id="status" class="muted small" role="status">Σύνδεση…</div>
 </aside></main></div>
+<dialog id="importDlg"><div class="dlg-grid">
+<h2 class="section-title" style="margin:0">Εισαγωγή προγράμματος συνεδρίου</h2>
+<p class="muted small" style="margin:0">Κάθε συνέδριο έχει δικό του πρόγραμμα, οπότε το μετατρέπει ένα AI (ChatGPT, Claude, Gemini κ.ά.) σε CSV. <b>1.</b> Πάτα «Αντιγραφή prompt για AI». <b>2.</b> Επικόλλησέ το σε ένα AI και πρόσθεσε από κάτω το πρόγραμμά σου (κείμενο, πίνακα, PDF ή φωτογραφία). <b>3.</b> Επικόλλησε εδώ το CSV που θα σου δώσει ή ανέβασε το αρχείο.</p>
+<div class="row wrap"><button type="button" id="impCopy">Αντιγραφή prompt για AI</button><button type="button" id="impPick">Ανέβασμα αρχείου CSV</button><input type="file" id="impFile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
+<textarea id="impText" rows="6" spellcheck="false" placeholder="speaker,title,duration&#10;Μαρία Παπαδοπούλου,Η ομιλία μου,00:20:00"></textarea>
+<div class="dlg-two"><div><label>Διάρκεια όταν λείπει</label><div class="dur" data-dur="impDef"></div></div><div><label for="impMode">Τρόπος</label><select id="impMode"><option value="add">Προσθήκη στα υπάρχοντα</option><option value="replace">Αντικατάσταση όλων</option></select></div></div>
+<div id="impPreview"></div>
+<div id="impError" class="notice"></div>
+<div class="row between"><button type="button" id="impCancel">Άκυρο</button><button type="button" class="primary" id="impGo" disabled>Εισαγωγή</button></div>
+</div></dialog>
+
 <dialog id="timerDlg"><form id="timerForm" class="dlg-grid" method="dialog"><h2 class="section-title" style="margin:0">Ρυθμίσεις χρονομέτρου</h2>
-<div><label for="sName">Όνομα</label><input id="sName" maxlength="60"></div>
+<div><label for="sSpeaker">Ομιλητής</label><input id="sSpeaker" maxlength="80"></div>
+<div><label for="sName">Τίτλος ομιλίας / όνομα</label><input id="sName" maxlength="120"></div>
 <div><label>Διάρκεια — η αλλαγή κάνει reset</label><div class="dur" data-dur="sDur"></div></div>
 <div><label>Κίτρινο όταν απομένουν</label><div class="dur" data-dur="sYellow"></div></div>
 <div><label>Κόκκινο όταν απομένουν</label><div class="dur" data-dur="sRed"></div></div>
@@ -26,4 +38,4 @@
 <label class="checkbox"><input type="checkbox" id="sFlash"> Flash 5″ όταν μηδενίσει (μετά μετράει υπέρβαση χρόνου)</label>
 <div id="sError" class="notice"></div>
 <div class="row between"><button type="button" id="sCancel">Άκυρο</button><button class="primary" id="sSave">Αποθήκευση</button></div></form></dialog>
-<script src="/socket.io/socket.io.js"></script><script src="/common.js"></script><script src="/admin.js"></script></body></html>
+<script src="/socket.io/socket.io.js"></script><script src="/common.js"></script><script src="/import.js"></script><script src="/admin.js"></script></body></html>

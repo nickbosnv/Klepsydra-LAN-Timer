@@ -17,7 +17,7 @@ function render(){
  let html="";
  if(!state.settings.blackout){
   const zr=t?Math.min(100,t.redSec*1000/t.durationMs*100):0,zy=t?Math.min(100,t.yellowSec*1000/t.durationMs*100):0;
-  html=state.settings.clockOnly?'<section class="hero-timer"><div class="hero-time clock-big" data-clock></div></section>':t?`<section class="hero-timer" data-tid="${esc(t.id)}"><div class="hero-name">${esc(t.name)}</div><div class="hero-time" data-time></div>${t.showProgress?`<div class="progress" style="--r:${zr}%;--y:${zy}%"><div data-bar></div></div>`:""}</section>`:'<div class="empty">Δεν υπάρχει χρονόμετρο.</div>';
+  html=state.settings.clockOnly?'<section class="hero-timer"><div class="hero-time clock-big" data-clock></div></section>':t?`<section class="hero-timer" data-tid="${esc(t.id)}">${t.speaker?`<div class="hero-speaker">${esc(t.speaker)}</div><div class="hero-title">${esc(t.name)}</div>`:`<div class="hero-name">${esc(t.name)}</div>`}<div class="hero-time" data-time></div>${t.showProgress?`<div class="progress" style="--r:${zr}%;--y:${zy}%"><div data-bar></div></div>`:""}</section>`:'<div class="empty">Δεν υπάρχει χρονόμετρο.</div>';
   if(msgs.length)html+=`<div class="view-messages">${msgs.map(m=>`<div class="view-message" style="color:${esc(m.color)}">${esc(m.text)}</div>`).join("")}</div>`;
  }
  if(html!==lastHtml){$("main").innerHTML=html;lastHtml=html;}

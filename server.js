@@ -77,7 +77,8 @@ const io = new Server(server);
 const COLORS = ["#ffffff", "#22c55e", "#ef4444", "#f59e0b", "#60a5fa"];
 const MAX_MS = 24 * 60 * 60 * 1000;
 // Ρυθμίσεις ανά χρονόμετρο: κίτρινο/κόκκινο όταν απομένουν <= δευτερόλεπτα (0 = απενεργοποιημένο), τοπική ώρα, γραμμή προόδου, flash στο μηδέν.
-const TIMER_DEFAULTS = { yellowSec: 60, redSec: 15, showClock: false, showProgress: true, flashOnZero: true };
+const MAX_TIMERS = 200;
+const TIMER_DEFAULTS = { speaker: "", yellowSec: 60, redSec: 15, showClock: false, showProgress: true, flashOnZero: true };
 
 const defaultState = () => ({
   timers: [
@@ -139,7 +140,7 @@ function buildState(admin, now = Date.now()) {
     timers: [...state.timers].sort((a, b) => a.order - b.order).map(t => {
       const left = remaining(t, now);
       return {
-        id: t.id, name: t.name, durationMs: t.durationMs, remainingMs: left, running: t.running, order: t.order, finished: !t.running && left <= 0, expiredAt: !t.running && left <= 0 ? (t.expiredAt || null) : null,
+        id: t.id, name: t.name, speaker: t.speaker, durationMs: t.durationMs, remainingMs: left, running: t.running, order: t.order, finished: !t.running && left <= 0, expiredAt: !t.running && left <= 0 ? (t.expiredAt || null) : null,
         yellowSec: t.yellowSec, redSec: t.redSec, showClock: t.showClock, showProgress: t.showProgress, flashOnZero: t.flashOnZero
       };
     }),
@@ -205,6 +206,8 @@ const sessionMiddleware = session({
 });
 
 app.disable("x-powered-by");
+// Η εισαγωγή προγράμματος στέλνει πολλές γραμμές· πρέπει να δηλωθεί πριν από τον γενικό parser των 32kb.
+app.use("/api/timers/import", express.json({ limit: "512kb" }));
 app.use(express.json({ limit: "32kb" }));
 app.use(sessionMiddleware);
 app.use("/api", (_req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
@@ -265,13 +268,35 @@ const stateFor = req => buildState(req.session?.admin === true);
 app.get("/api/state", (req, res) => res.json(stateFor(req)));
 
 app.post("/api/timers", adminOnly, (req, res) => {
-  if (state.timers.length >= 30) return res.status(400).json({ error: "Μέγιστο όριο 30 χρονομέτρων." });
-  const name = safeText(req.body?.name, 60) || `Timer ${state.timers.length + 1}`;
+  if (state.timers.length >= MAX_TIMERS) return res.status(400).json({ error: `Μέγιστο όριο ${MAX_TIMERS} χρονομέτρων.` });
+  const name = safeText(req.body?.name, 120) || `Timer ${state.timers.length + 1}`;
+  const speaker = safeText(req.body?.speaker, 80);
   const durationMs = msFromInput(req.body?.seconds ?? 600);
   if (durationMs === null || durationMs < 1000) return res.status(400).json({ error: "Ο χρόνος πρέπει να είναι τουλάχιστον 1 δευτερόλεπτο." });
-  const timer = { id: crypto.randomUUID(), name, durationMs, remainingMs: durationMs, running: false, endAt: null, order: state.timers.length, ...TIMER_DEFAULTS };
+  const timer = { ...TIMER_DEFAULTS, id: crypto.randomUUID(), name, speaker, durationMs, remainingMs: durationMs, running: false, endAt: null, order: state.timers.length };
   state.timers.push(timer);
   if (!state.settings.activeTimerId) state.settings.activeTimerId = timer.id;
+  saveState(); broadcast(); res.json(stateFor(req));
+});
+// Εισαγωγή προγράμματος: rows = [{ speaker, title, seconds }], mode = "add" | "replace". Ελέγχεται πλήρως εδώ, όχι μόνο στον browser.
+app.post("/api/timers/import", adminOnly, (req, res) => {
+  const rows = req.body?.rows;
+  const replace = req.body?.mode === "replace";
+  if (!Array.isArray(rows) || !rows.length) return res.status(400).json({ error: "Δεν υπάρχουν γραμμές για εισαγωγή." });
+  const base = replace ? 0 : state.timers.length;
+  if (base + rows.length > MAX_TIMERS) return res.status(400).json({ error: `Το όριο είναι ${MAX_TIMERS} χρονόμετρα (θα γίνονταν ${base + rows.length}).` });
+  const made = [];
+  for (const [i, r] of rows.entries()) {
+    const ms = msFromInput(r?.seconds);
+    if (ms === null || ms < 1000) return res.status(400).json({ error: `Μη έγκυρη διάρκεια στη γραμμή ${i + 1}.` });
+    let name = safeText(r?.title, 120), speaker = safeText(r?.speaker, 80);
+    if (!name) { name = speaker; speaker = ""; } // γραμμή χωρίς τίτλο: ό,τι υπάρχει γίνεται το όνομα
+    if (!name) name = `Timer ${base + i + 1}`;
+    made.push({ ...TIMER_DEFAULTS, id: crypto.randomUUID(), name, speaker, durationMs: ms, remainingMs: ms, running: false, endAt: null, order: base + i });
+  }
+  if (replace) state.timers = [];
+  state.timers.push(...made);
+  if (!state.timers.some(t => t.id === state.settings.activeTimerId)) state.settings.activeTimerId = [...state.timers].sort((a, b) => a.order - b.order)[0]?.id || null;
   saveState(); broadcast(); res.json(stateFor(req));
 });
 // Σημείωση: το /api/timers/reorder πρέπει να δηλωθεί πριν από routes με :id ώστε να μη μπερδεύεται.
@@ -297,7 +322,8 @@ app.patch("/api/timers/:id", adminOnly, (req, res) => {
   const red = b.redSec !== undefined ? secs(b.redSec) : t.redSec;
   if (yellow === null || red === null) return res.status(400).json({ error: "Μη έγκυρο όριο κίτρινου/κόκκινου." });
   if (yellow > 0 && red > yellow) return res.status(400).json({ error: "Το κόκκινο πρέπει να είναι ίσο ή μικρότερο από το κίτρινο." });
-  if (b.name !== undefined) t.name = safeText(b.name, 60) || t.name;
+  if (b.name !== undefined) t.name = safeText(b.name, 120) || t.name;
+  if (b.speaker !== undefined) t.speaker = safeText(b.speaker, 80);
   t.yellowSec = yellow; t.redSec = red;
   for (const k of ["showClock", "showProgress", "flashOnZero"]) if (typeof b[k] === "boolean") t[k] = b[k];
   if (ms !== null && ms !== t.durationMs) { t.durationMs = ms; t.remainingMs = ms; t.running = false; t.endAt = null; t.expiredAt = null; }
