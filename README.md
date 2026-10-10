@@ -1,3 +1,5 @@
+<p align="center"><img src="public/img/logo.png" alt="Klepsydra Timer" width="320"></p>
+
 # Klepsydra LAN Timer — Windows
 
 Έτοιμη τοπική εφαρμογή timer με Dashboard διαχειριστή και ξεχωριστή σελίδα προβολής. Χρησιμοποιεί Node.js, Express, Socket.IO και αποθήκευση σε τοπικό JSON.

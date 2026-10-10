@@ -53,3 +53,5 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .net-note code{display:block;margin:8px 0;padding:8px;border-radius:6px;background:#0B1A20;color:var(--sand);font:12px Consolas,monospace;overflow-wrap:anywhere;user-select:all}
 .login-card{width:min(520px,100%)}
 button.toggle.on{background:var(--accent);border-color:var(--accent);color:#06161B;font-weight:700}
+.brand .mark{width:28px;height:28px;border-radius:7px;flex:none}
+.login-logo{display:block;width:min(260px,70%);height:auto;margin:0 auto;border-radius:14px}
