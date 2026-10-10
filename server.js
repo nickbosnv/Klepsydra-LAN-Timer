@@ -335,7 +335,7 @@ app.post("/api/timers/:id/action", adminOnly, (req, res) => {
   } else if (action === "add" || action === "subtract") {
     let secs = Number(req.body?.seconds);
     if (!Number.isFinite(secs)) secs = 60;
-    const delta = Math.max(1, Math.min(3600, Math.round(secs))) * 1000;
+    const delta = Math.max(1, Math.min(24 * 3600, Math.round(secs))) * 1000;
     t.remainingMs = Math.max(0, Math.min(MAX_MS, remaining(t) + (action === "add" ? delta : -delta)));
     if (t.running) t.endAt = Date.now() + t.remainingMs;
   } else return res.status(400).json({ error: "Άγνωστη ενέργεια." });

@@ -6,8 +6,8 @@
 <header class="app-header"><div><div class="brand"><span>KLEPSYDRA</span> TIMER</div><div class="muted small">Διαχείριση χρονομέτρων</div></div><div class="header-actions"><a href="/view" target="_blank" rel="noopener"><button>Άνοιγμα View ↗</button></a><button id="logout">Έξοδος</button></div></header>
 <main class="page two-col">
 <section class="grid">
-<div class="panel"><h2 class="section-title">Προσθήκη χρονομέτρου</h2><form id="addTimer" class="form-grid"><div><label>Όνομα</label><input id="newName" maxlength="60" placeholder="π.χ. Ομιλία 1"></div><div><label>Διάρκεια (λεπτά)</label><input id="newMinutes" type="number" min="0.02" max="1440" step="any" value="10" required></div><button class="primary">+ Προσθήκη</button></form></div>
-<div class="panel"><div class="row between"><h2 class="section-title" style="margin:0">Χρονόμετρα</h2><span id="timerCount" class="pill">0</span></div><p class="muted small">Ο χρόνος μετράει στον server, όχι ξεχωριστά σε κάθε browser.</p><div id="timers" class="timer-list"></div></div>
+<div class="panel"><h2 class="section-title">Προσθήκη χρονομέτρου</h2><form id="addTimer" class="form-grid"><div><label>Όνομα</label><input id="newName" maxlength="60" placeholder="π.χ. Ομιλία 1"></div><div><label>Διάρκεια</label><div class="dur" data-dur="newDur"></div></div><button class="primary">+ Προσθήκη</button></form></div>
+<div class="panel"><div class="row between"><h2 class="section-title" style="margin:0">Χρονόμετρα</h2><span id="timerCount" class="pill">0</span></div><p class="muted small">Ο χρόνος μετράει στον server, όχι ξεχωριστά σε κάθε browser.</p><div class="row wrap" style="margin-bottom:10px"><label style="margin:0">Βήμα στα +/−:</label><div class="dur" data-dur="step"></div></div><div id="timers" class="timer-list"></div></div>
 </section>
 <aside class="grid">
 <div class="panel"><h2 class="section-title">Οθόνες θεατών</h2><p class="muted small" style="margin-top:0">Οι θεατές βλέπουν το <b>ενεργό χρονόμετρο</b> (αυτό που έχει την ένδειξη «Ενεργό»). Η Έναρξη ενός χρονομέτρου το κάνει ενεργό και σταματά τα υπόλοιπα.</p><div class="grid"><label class="checkbox"><input type="checkbox" id="clockOnly"> Μόνο τοπική ώρα (χωρίς χρονόμετρο)</label><label class="checkbox"><input type="checkbox" id="blackout"> Blackout (μαύρη οθόνη)</label></div></div>
@@ -17,8 +17,9 @@
 </aside></main></div>
 <dialog id="timerDlg"><form id="timerForm" class="dlg-grid" method="dialog"><h2 class="section-title" style="margin:0">Ρυθμίσεις χρονομέτρου</h2>
 <div><label for="sName">Όνομα</label><input id="sName" maxlength="60"></div>
-<div><label for="sMinutes">Διάρκεια (λεπτά) — η αλλαγή κάνει reset</label><input id="sMinutes" type="number" min="0.02" max="1440" step="any" required></div>
-<div class="dlg-two"><div><label for="sYellow">Κίτρινο όταν απομένουν (δευτ.)</label><input id="sYellow" type="number" min="0" max="86400" step="1" required></div><div><label for="sRed">Κόκκινο όταν απομένουν (δευτ.)</label><input id="sRed" type="number" min="0" max="86400" step="1" required></div></div>
+<div><label>Διάρκεια — η αλλαγή κάνει reset</label><div class="dur" data-dur="sDur"></div></div>
+<div><label>Κίτρινο όταν απομένουν</label><div class="dur" data-dur="sYellow"></div></div>
+<div><label>Κόκκινο όταν απομένουν</label><div class="dur" data-dur="sRed"></div></div>
 <p class="muted small" style="margin:0">0 = χωρίς αλλαγή χρώματος. Το κόκκινο πρέπει να είναι ≤ κίτρινο.</p>
 <label class="checkbox"><input type="checkbox" id="sClock"> Εμφάνιση τοπικής ώρας στην οθόνη θεατών</label>
 <label class="checkbox"><input type="checkbox" id="sProgress"> Γραμμή προόδου</label>
