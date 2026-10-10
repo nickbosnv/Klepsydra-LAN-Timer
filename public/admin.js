@@ -58,7 +58,7 @@ function timersMarkup(timers,activeId){
  return timers.length?timers.map((t,i)=>{const id=esc(t.id),active=t.id===activeId,sel=selected.has(t.id);return `<article class="timer-card ${t.running?"running":""} ${active?"active":""} ${t.hidden?"is-hidden":""} ${sel?"selected":""}" data-id="${id}"><label class="card-check"><input type="checkbox" data-sel="${id}" ${sel?"checked":""} aria-label="Επιλογή"></label><div>${t.speaker?`<div class="timer-speaker">${esc(t.speaker)}</div>`:""}<div class="row wrap"><span class="timer-name">${esc(t.name)}</span>${active?'<span class="pill on">Ενεργό</span>':""}${t.hidden?'<span class="pill">Κρυφό</span>':""}<span class="pill">${t.running?"Σε εξέλιξη":t.finished?"Ολοκληρώθηκε":"Σε αναμονή"}</span></div><div class="timer-time" data-time="${id}"></div><div class="muted small">Αρχική διάρκεια: ${fmt(t.durationMs)}</div><div class="row wrap" style="margin-top:10px"><button data-select="${id}" ${active?"disabled":""}>Ορισμός ενεργού</button><button data-edit="${id}">⚙ Ρυθμίσεις</button><button data-order="${id}" data-dir="-1" ${i===0?"disabled":""}>↑</button><button data-order="${id}" data-dir="1" ${i===timers.length-1?"disabled":""}>↓</button></div></div><div class="timer-actions"><button class="good" data-act="${id}" data-action="${t.running?"pause":"start"}">${t.running?"Ⅱ Παύση":"▶ Έναρξη"}</button><button data-act="${id}" data-action="reset">↺ Reset</button><button data-act="${id}" data-action="subtract">−${step}</button><button data-act="${id}" data-action="add">+${step}</button><button class="danger" data-delete="${id}">Διαγραφή</button></div></article>`;}).join(""):`<div class="empty">Δεν υπάρχουν ορατά χρονόμετρα. Πάτα «+ Νέο χρονόμετρο» ή «Εισαγωγή προγράμματος».</div>`;
 }
 function messagesMarkup(messages){
- return messages.length?messages.map(m=>`<div class="message-item"><div><div style="color:${esc(m.color)};font-weight:700;overflow-wrap:anywhere">${esc(m.text)}</div><div class="muted small">${m.visible?"Εμφανές":"Κρυφό"}</div></div><div class="row wrap"><button data-msg-toggle="${esc(m.id)}" data-visible="${!m.visible}">${m.visible?"Απόκρυψη":"Εμφάνιση"}</button><button class="danger" data-msg-delete="${esc(m.id)}">×</button></div></div>`).join(""):'<div class="empty" style="margin-top:10px">Δεν υπάρχουν μηνύματα.</div>';
+ return messages.length?messages.map(m=>`<div class="message-item"><div><div style="color:${esc(m.color)};font-weight:700;overflow-wrap:anywhere">${esc(m.text)}</div><div class="muted small">${m.visible?"Εμφανές":"Κρυφό"}</div></div><div class="row wrap"><button data-msg-edit="${esc(m.id)}">Επεξεργασία</button><button data-msg-toggle="${esc(m.id)}" data-visible="${!m.visible}">${m.visible?"Απόκρυψη":"Εμφάνιση"}</button><button class="danger" data-msg-delete="${esc(m.id)}">×</button></div></div>`).join(""):'<div class="empty" style="margin-top:10px">Δεν υπάρχουν μηνύματα.</div>';
 }
 // Re-render μόνο όταν αλλάζει η δομή· οι χρόνοι ενημερώνονται από το tick().
 function render(){
@@ -100,6 +100,15 @@ $("blackout").onchange=async()=>{try{await api("/api/settings",{method:"PATCH",b
 $("clockOnly").onchange=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({clockOnly:$("clockOnly").checked})});}catch(e){alert(e.message);}};
 $("flashBtn").onclick=async()=>{const b=$("flashBtn");b.disabled=true;setTimeout(()=>{b.disabled=false;},2800);try{await api("/api/flash",{method:"POST"});}catch(e){b.disabled=false;alert(e.message);}};
 $("clockBtn").onclick=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({showClock:!current.settings.showClock})});}catch(e){alert(e.message);}};
+// Επεξεργασία μηνύματος (κείμενο, χρώμα, εμφάνιση) μετά την προσθήκη.
+let editMsgId = null;
+$("msgEditCancel").onclick = () => $("msgDlg").close();
+$("msgEditSave").onclick = async () => {
+ try {
+  await api(`/api/messages/${editMsgId}`, { method: "PATCH", body: JSON.stringify({ text: $("msgEditText").value, color: $("msgEditColor").value, visible: $("msgEditVisible").checked }) });
+  $("msgDlg").close();
+ } catch (err) { $("msgEditError").textContent = err.message; }
+};
 $("sCancel").onclick=()=>$("timerDlg").close();
 $("timerForm").addEventListener("submit",async e=>{
  e.preventDefault();
@@ -110,7 +119,7 @@ $("timerForm").addEventListener("submit",async e=>{
  try{await api(`/api/timers/${t.id}`,{method:"PATCH",body:JSON.stringify(body)});$("timerDlg").close();}catch(err){$("sError").textContent=err.message;}
 });
 $("addMessage").addEventListener("submit",async e=>{e.preventDefault();try{await api("/api/messages",{method:"POST",body:JSON.stringify({text:$("messageText").value,color:$("messageColor").value,visible:$("messageVisible").checked})});$("messageText").value="";}catch(err){alert(err.message);}});
-$("messages").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;try{if(b.dataset.msgToggle)await api(`/api/messages/${b.dataset.msgToggle}`,{method:"PATCH",body:JSON.stringify({visible:b.dataset.visible==="true"})});if(b.dataset.msgDelete)await api(`/api/messages/${b.dataset.msgDelete}`,{method:"DELETE"});}catch(err){alert(err.message);}});
+$("messages").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;try{if(b.dataset.msgEdit){const m=current.messages.find(x=>x.id===b.dataset.msgEdit);if(!m)return;editMsgId=m.id;$("msgEditText").value=m.text;$("msgEditColor").value=m.color;$("msgEditVisible").checked=m.visible;$("msgEditError").textContent="";$("msgDlg").showModal();return;}if(b.dataset.msgToggle)await api(`/api/messages/${b.dataset.msgToggle}`,{method:"PATCH",body:JSON.stringify({visible:b.dataset.visible==="true"})});if(b.dataset.msgDelete)await api(`/api/messages/${b.dataset.msgDelete}`,{method:"DELETE"});}catch(err){alert(err.message);}});
 // --- Εισαγωγή προγράμματος (CSV από AI) ---
 function impEval(){
  const def=getDur("impDef");

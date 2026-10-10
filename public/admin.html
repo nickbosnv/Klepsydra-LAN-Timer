@@ -43,6 +43,14 @@
 <div id="bulkError" class="notice"></div>
 <div class="row between"><button type="button" id="bulkCancel">Άκυρο</button><button type="button" class="primary" id="bulkSave">Εφαρμογή</button></div>
 </div></dialog>
+<dialog id="msgDlg"><div class="dlg-grid">
+<h2 class="section-title" style="margin:0">Επεξεργασία μηνύματος</h2>
+<div><label for="msgEditText">Κείμενο</label><textarea id="msgEditText" rows="3" maxlength="240"></textarea></div>
+<div><label for="msgEditColor">Χρώμα</label><select id="msgEditColor"><option value="#ffffff">Λευκό</option><option value="#22c55e">Πράσινο</option><option value="#ef4444">Κόκκινο</option><option value="#f59e0b">Πορτοκαλί</option><option value="#60a5fa">Μπλε</option></select></div>
+<label class="checkbox"><input type="checkbox" id="msgEditVisible"> Εμφανές</label>
+<div id="msgEditError" class="notice"></div>
+<div class="row between"><button type="button" id="msgEditCancel">Άκυρο</button><button type="button" class="primary" id="msgEditSave">Αποθήκευση</button></div>
+</div></dialog>
 <dialog id="importDlg"><div class="dlg-grid">
 <h2 class="section-title" style="margin:0">Εισαγωγή προγράμματος συνεδρίου</h2>
 <p class="muted small" style="margin:0">Κάθε συνέδριο έχει δικό του πρόγραμμα, οπότε το μετατρέπει ένα AI (ChatGPT, Claude, Gemini κ.ά.) σε CSV. <b>1.</b> Πάτα «Αντιγραφή prompt για AI». <b>2.</b> Επικόλλησέ το σε ένα AI και πρόσθεσε από κάτω το πρόγραμμά σου (κείμενο, πίνακα, PDF ή φωτογραφία). <b>3.</b> Επικόλλησε εδώ το CSV που θα σου δώσει ή ανέβασε το αρχείο.</p>
