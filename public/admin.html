@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Klepsydra Timer — Dashboard</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<div id="login" class="login-wrap"><form id="loginForm" class="login-card"><div class="brand"><span>KLEPSYDRA</span> TIMER</div><h1 style="margin-top:24px">Dashboard</h1><p class="muted">Σύνδεση διαχειριστή</p><label for="pin">PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" required autofocus><button class="primary" style="width:100%;margin-top:12px">Σύνδεση</button><div id="loginError" class="notice"></div><p class="muted small">Η προβολή είναι διαθέσιμη χωρίς PIN στο τοπικό δίκτυο.</p></form></div>
+<div id="app" hidden>
+<header class="app-header"><div><div class="brand"><span>KLEPSYDRA</span> TIMER</div><div class="muted small">Διαχείριση χρονομέτρων</div></div><div class="header-actions"><a href="/view" target="_blank" rel="noopener"><button>Άνοιγμα View ↗</button></a><button id="logout">Έξοδος</button></div></header>
+<main class="page two-col">
+<section class="grid">
+<div class="panel"><h2 class="section-title">Προσθήκη χρονομέτρου</h2><form id="addTimer" class="form-grid"><div><label>Όνομα</label><input id="newName" maxlength="60" placeholder="π.χ. Ομιλία 1"></div><div><label>Διάρκεια (λεπτά)</label><input id="newMinutes" type="number" min="0.02" max="1440" step="any" value="10" required></div><button class="primary">+ Προσθήκη</button></form></div>
+<div class="panel"><div class="row between"><h2 class="section-title" style="margin:0">Χρονόμετρα</h2><span id="timerCount" class="pill">0</span></div><p class="muted small">Ο χρόνος μετράει στον server, όχι ξεχωριστά σε κάθε browser.</p><div id="timers" class="timer-list"></div></div>
+</section>
+<aside class="grid">
+<div class="panel"><h2 class="section-title">Οθόνες θεατών</h2><p class="muted small" style="margin-top:0">Οι θεατές βλέπουν το <b>ενεργό χρονόμετρο</b> (αυτό που έχει την ένδειξη «Ενεργό»). Η Έναρξη ενός χρονομέτρου το κάνει ενεργό και σταματά τα υπόλοιπα.</p><div class="grid"><label class="checkbox"><input type="checkbox" id="clockOnly"> Μόνο τοπική ώρα (χωρίς χρονόμετρο)</label><label class="checkbox"><input type="checkbox" id="blackout"> Blackout (μαύρη οθόνη)</label></div></div>
+<div class="panel"><h2 class="section-title">Μηνύματα προβολής</h2><form id="addMessage" class="grid"><div><label>Κείμενο</label><textarea id="messageText" rows="2" maxlength="240" placeholder="π.χ. 10 στις 30" required></textarea></div><div><label>Χρώμα</label><select id="messageColor"><option value="#ffffff">Λευκό</option><option value="#22c55e">Πράσινο</option><option value="#ef4444">Κόκκινο</option><option value="#f59e0b">Πορτοκαλί</option><option value="#60a5fa">Μπλε</option></select></div><label class="checkbox"><input type="checkbox" id="messageVisible" checked> Εμφανές</label><button class="primary">+ Προσθήκη μηνύματος</button></form><div id="messages"></div></div>
+<div class="panel"><h2 class="section-title">Σύνδεση θεατών (QR)</h2><div id="ipWrap"><label for="ipSelect">Διεύθυνση (IP) του laptop για το QR</label><select id="ipSelect"></select></div><div id="qr" style="background:#fff;border-radius:8px;padding:6px;width:min(240px,100%);margin-top:12px"></div><div id="joinUrl" class="small" style="overflow-wrap:anywhere;margin-top:8px"></div><p class="small" style="margin-top:10px">Οι θεατές σκανάρουν το QR και βλέπουν το <b>ενεργό χρονόμετρο</b> και τα εμφανή μηνύματα, χωρίς κωδικό.</p><div class="notice" style="color:#fbbf24;min-height:0">⚠ Ο υπολογιστής και οι συσκευές των θεατών πρέπει να είναι στο ίδιο <b>ιδιωτικό δίκτυο</b> (Wi-Fi/LAN). Στα Windows το δίκτυο πρέπει να είναι σε προφίλ <b>Private</b> και όχι Public, αλλιώς το firewall μπλοκάρει τη σύνδεση. Μην το χρησιμοποιείς σε δημόσιο Wi-Fi.</div><div id="noIp" class="notice" hidden>Δεν βρέθηκε ιδιωτική διεύθυνση δικτύου. Συνδέσου σε Wi-Fi/LAN και ανανέωσε τη σελίδα.</div></div>
+<div id="status" class="muted small" role="status">Σύνδεση…</div>
+</aside></main></div>
+<dialog id="timerDlg"><form id="timerForm" class="dlg-grid" method="dialog"><h2 class="section-title" style="margin:0">Ρυθμίσεις χρονομέτρου</h2>
+<div><label for="sName">Όνομα</label><input id="sName" maxlength="60"></div>
+<div><label for="sMinutes">Διάρκεια (λεπτά) — η αλλαγή κάνει reset</label><input id="sMinutes" type="number" min="0.02" max="1440" step="any" required></div>
+<div class="dlg-two"><div><label for="sYellow">Κίτρινο όταν απομένουν (δευτ.)</label><input id="sYellow" type="number" min="0" max="86400" step="1" required></div><div><label for="sRed">Κόκκινο όταν απομένουν (δευτ.)</label><input id="sRed" type="number" min="0" max="86400" step="1" required></div></div>
+<p class="muted small" style="margin:0">0 = χωρίς αλλαγή χρώματος. Το κόκκινο πρέπει να είναι ≤ κίτρινο.</p>
+<label class="checkbox"><input type="checkbox" id="sClock"> Εμφάνιση τοπικής ώρας στην οθόνη θεατών</label>
+<label class="checkbox"><input type="checkbox" id="sProgress"> Γραμμή προόδου</label>
+<label class="checkbox"><input type="checkbox" id="sFlash"> Flash όταν μηδενίσει</label>
+<div id="sError" class="notice"></div>
+<div class="row between"><button type="button" id="sCancel">Άκυρο</button><button class="primary" id="sSave">Αποθήκευση</button></div></form></dialog>
+<script src="/socket.io/socket.io.js"></script><script src="/common.js"></script><script src="/admin.js"></script></body></html>
