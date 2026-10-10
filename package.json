@@ -2,6 +2,7 @@
   "name": "klepsydra",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Klepsydra — LAN timer dashboard and display for Windows",
   "main": "server.js",
   "scripts": {

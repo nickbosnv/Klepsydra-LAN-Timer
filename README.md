@@ -109,6 +109,9 @@ npm start
 ```
 
 
+## Άδεια χρήσης
+MIT — δες το αρχείο [LICENSE](LICENSE).
+
 ## EXE builder troubleshooting
 
 - Το build χρησιμοποιεί `@yao-pkg/pkg` με target `node22-win-x64`. Για αυτό υπάρχει prebuilt base binary, οπότε **δεν** απαιτούνται Visual C++ build tools ούτε το εργαλείο `patch` (το παλιό target `node20-win-x64` τα ζητούσε).
