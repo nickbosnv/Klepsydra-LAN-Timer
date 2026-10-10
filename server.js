@@ -77,7 +77,7 @@ const io = new Server(server);
 const COLORS = ["#ffffff", "#22c55e", "#ef4444", "#f59e0b", "#60a5fa"];
 const MAX_MS = 24 * 60 * 60 * 1000;
 // Ρυθμίσεις ανά χρονόμετρο: κίτρινο/κόκκινο όταν απομένουν <= δευτερόλεπτα (0 = απενεργοποιημένο), τοπική ώρα, γραμμή προόδου, flash στο μηδέν.
-const TIMER_DEFAULTS = { yellowSec: 60, redSec: 15, showClock: false, showProgress: true, flashOnZero: false };
+const TIMER_DEFAULTS = { yellowSec: 60, redSec: 15, showClock: false, showProgress: true, flashOnZero: true };
 
 const defaultState = () => ({
   timers: [
@@ -103,6 +103,11 @@ for (const t of state.timers) for (const [k, v] of Object.entries(TIMER_DEFAULTS
 if (!state.defaultsV2) {
   for (const t of state.timers) if (t.yellowSec === 120 && t.redSec === 30) { t.yellowSec = 60; t.redSec = 15; }
   state.defaultsV2 = true;
+}
+// Το flash στο μηδέν (5″) είναι πλέον η προεπιλογή: ενεργοποιείται μία φορά στα υπάρχοντα χρονόμετρα.
+if (!state.defaultsV3) {
+  for (const t of state.timers) t.flashOnZero = true;
+  state.defaultsV3 = true;
 }
 state.settings = { activeTimerId: state.settings.activeTimerId || null, blackout: state.settings.blackout === true, clockOnly: state.settings.clockOnly === true };
 if (!state.timers.some(t => t.id === state.settings.activeTimerId)) state.settings.activeTimerId = state.timers[0]?.id || null;
@@ -134,7 +139,7 @@ function buildState(admin, now = Date.now()) {
     timers: [...state.timers].sort((a, b) => a.order - b.order).map(t => {
       const left = remaining(t, now);
       return {
-        id: t.id, name: t.name, durationMs: t.durationMs, remainingMs: left, running: t.running, order: t.order, finished: !t.running && left <= 0,
+        id: t.id, name: t.name, durationMs: t.durationMs, remainingMs: left, running: t.running, order: t.order, finished: !t.running && left <= 0, expiredAt: !t.running && left <= 0 ? (t.expiredAt || null) : null,
         yellowSec: t.yellowSec, redSec: t.redSec, showClock: t.showClock, showProgress: t.showProgress, flashOnZero: t.flashOnZero
       };
     }),
@@ -147,7 +152,7 @@ function settleExpired() {
   let changed = false;
   for (const t of state.timers) {
     if (t.running && remaining(t) <= 0) {
-      t.running = false; t.remainingMs = 0; t.endAt = null; changed = true;
+      t.expiredAt = t.endAt; t.running = false; t.remainingMs = 0; t.endAt = null; changed = true;
     }
   }
   if (changed) saveState();
@@ -295,7 +300,7 @@ app.patch("/api/timers/:id", adminOnly, (req, res) => {
   if (b.name !== undefined) t.name = safeText(b.name, 60) || t.name;
   t.yellowSec = yellow; t.redSec = red;
   for (const k of ["showClock", "showProgress", "flashOnZero"]) if (typeof b[k] === "boolean") t[k] = b[k];
-  if (ms !== null && ms !== t.durationMs) { t.durationMs = ms; t.remainingMs = ms; t.running = false; t.endAt = null; }
+  if (ms !== null && ms !== t.durationMs) { t.durationMs = ms; t.remainingMs = ms; t.running = false; t.endAt = null; t.expiredAt = null; }
   saveState(); broadcast(); res.json(stateFor(req));
 });
 app.delete("/api/timers/:id", adminOnly, (req, res) => {
@@ -324,7 +329,7 @@ app.post("/api/timers/:id/action", adminOnly, (req, res) => {
     }
     state.settings.activeTimerId = t.id;
   } else if (action === "pause") {
-    t.remainingMs = remaining(t); t.running = false; t.endAt = null;
+    t.remainingMs = remaining(t); t.running = false; t.endAt = null; t.expiredAt = null;
   } else if (action === "reset") {
     t.running = false; t.endAt = null; t.remainingMs = t.durationMs;
   } else if (action === "add" || action === "subtract") {
@@ -334,6 +339,7 @@ app.post("/api/timers/:id/action", adminOnly, (req, res) => {
     t.remainingMs = Math.max(0, Math.min(MAX_MS, remaining(t) + (action === "add" ? delta : -delta)));
     if (t.running) t.endAt = Date.now() + t.remainingMs;
   } else return res.status(400).json({ error: "Άγνωστη ενέργεια." });
+  if (t.running || t.remainingMs > 0) t.expiredAt = null; // το overtime μετράει μόνο όσο το χρονόμετρο είναι στο μηδέν
   saveState(); broadcast(); res.json(stateFor(req));
 });
 app.patch("/api/settings", adminOnly, (req, res) => {

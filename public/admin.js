@@ -63,7 +63,7 @@ function tick(){
  if(!current)return;
  for(const el of document.querySelectorAll("[data-time]")){
   const t=current.timers.find(x=>x.id===el.dataset.time);if(!t)continue;
-  const txt=fmt(liveRemaining(t,current));if(el.textContent!==txt)el.textContent=txt;
+  const ms=liveRemaining(t,current),ov=ms===0?overtimeMs(t,current):-1,txt=ov>=1000?fmtOver(ov):fmt(ms);if(el.textContent!==txt)el.textContent=txt;
  }
 }
 setInterval(tick,250);

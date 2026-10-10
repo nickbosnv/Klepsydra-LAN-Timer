@@ -30,9 +30,9 @@ function tick(){
  if(!t)return;
  if(t.showClock)$("clock").textContent=new Date().toLocaleTimeString("el-GR",{hour12:false});
  const el=document.querySelector("[data-tid]");if(!el)return;
- const ms=liveRemaining(t,state),time=el.querySelector("[data-time]"),txt=fmt(ms);if(time.textContent!==txt)time.textContent=txt;
+ const ms=liveRemaining(t,state),ov=ms===0?overtimeMs(t,state):-1,time=el.querySelector("[data-time]"),txt=ov>=1000?fmtOver(ov):fmt(ms);if(time.textContent!==txt)time.textContent=txt;
  const bar=el.querySelector("[data-bar]");if(bar)bar.style.width=(100-(t.durationMs?Math.max(0,Math.min(100,ms/t.durationMs*100)):0))+"%";
- const lv=levelFor(t,ms);el.classList.toggle("lv-warn",lv==="warn");el.classList.toggle("lv-danger",lv==="danger");
- el.classList.toggle("flash",!!t.flashOnZero&&ms===0);
+ const lv=ov>=0?"danger":levelFor(t,ms);el.classList.toggle("lv-warn",lv==="warn");el.classList.toggle("lv-danger",lv==="danger");
+ el.classList.toggle("flash",!!t.flashOnZero&&ov>=0&&ov<5000);
 }
 setInterval(tick,250);
