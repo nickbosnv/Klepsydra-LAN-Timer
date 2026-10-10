@@ -34,7 +34,7 @@
 1. Εγκατέστησε το Node.js LTS από https://nodejs.org/ και άφησε ενεργή την επιλογή προσθήκης στο PATH.
 2. Κατέβασε το project, είτε με Git:
    ```
-   git clone https://github.com/<USER>/Klepsydra-LAN-Timer.git
+   git clone https://github.com/nickbosnv/Klepsydra-LAN-Timer.git
    cd Klepsydra-LAN-Timer
    ```
    είτε από το GitHub με **Code → Download ZIP** και αποσυμπίεσέ το σε έναν φάκελο, π.χ. `C:\Klepsydra-LAN-Timer`.
