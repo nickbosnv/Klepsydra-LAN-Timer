@@ -21,6 +21,7 @@ function render(){
   if(msgs.length)html+=`<div class="view-messages">${msgs.map(m=>`<div class="view-message" style="color:${esc(m.color)}">${esc(m.text)}</div>`).join("")}</div>`;
  }
  if(html!==lastHtml){$("main").innerHTML=html;lastHtml=html;}
+ $("main").classList.toggle("has-msg",!state.settings.blackout&&msgs.length>0);
  $("clock").hidden=state.settings.clockOnly||!(t&&t.showClock);
  tick();
 }
@@ -33,9 +34,14 @@ function tick(){
  const ms=liveRemaining(t,state),ov=ms===0?overtimeMs(t,state):-1,time=el.querySelector("[data-time]"),txt=ov>=1000?fmtOver(ov):fmt(ms);if(time.textContent!==txt)time.textContent=txt;
  const bar=el.querySelector("[data-bar]");if(bar)bar.style.width=(100-(t.durationMs?Math.max(0,Math.min(100,ms/t.durationMs*100)):0))+"%";
  const lv=ov>=0?"danger":levelFor(t,ms);el.classList.toggle("lv-warn",lv==="warn");el.classList.toggle("lv-danger",lv==="danger");
- el.classList.toggle("flash",!!t.flashOnZero&&ov>=0&&ov<5000);
+ // Flash 5″ στο μηδέν: ο παλμός ξεκινά από τη σωστή φάση ακόμη κι αν η σελίδα φορτώσει στη μέση.
+ const a=$("alert"),on=!!t.flashOnZero&&ov>=0&&ov<5000;
+ if(on&&!a.classList.contains("loop")){a.style.setProperty("--dl",-ov+"ms");a.classList.add("loop");}else if(!on&&a.classList.contains("loop"))a.classList.remove("loop");
  // Στάθμη νερού: κατεβαίνει με τον χρόνο, παίρνει το χρώμα του επιπέδου (νερό → κίτρινο → κόκκινο)· στην υπέρβαση γεμίζει κόκκινο.
  const w=$("water");w.style.setProperty("--h",(ov>=0?100:(t.durationMs?Math.max(0,Math.min(100,ms/t.durationMs*100)):0))+"%");
  w.style.setProperty("--wc",lv==="danger"||ov>=0?"239,68,68":lv==="warn"?"250,204,21":"70,182,198");
 }
 setInterval(tick,250);
+// Κουμπί «Flash ×3» του Dashboard: τρεις παλμοί στην οθόνη.
+socket.on("flash",()=>{const a=$("alert");a.classList.remove("burst");void a.offsetWidth;a.classList.add("burst");});
+$("alert").addEventListener("animationend",e=>{if(e.target.classList.contains("burst"))e.target.classList.remove("burst");});

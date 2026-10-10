@@ -92,6 +92,7 @@ $("timers").addEventListener("click",async e=>{
 $("addTimer").addEventListener("submit",async e=>{e.preventDefault();try{await api("/api/timers",{method:"POST",body:JSON.stringify({name:$("newName").value,seconds:getDur("newDur")})});$("newName").value="";}catch(err){alert(err.message);}});
 $("blackout").onchange=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({blackout:$("blackout").checked})});}catch(e){alert(e.message);}};
 $("clockOnly").onchange=async()=>{try{await api("/api/settings",{method:"PATCH",body:JSON.stringify({clockOnly:$("clockOnly").checked})});}catch(e){alert(e.message);}};
+$("flashBtn").onclick=async()=>{const b=$("flashBtn");b.disabled=true;setTimeout(()=>{b.disabled=false;},2800);try{await api("/api/flash",{method:"POST"});}catch(e){b.disabled=false;alert(e.message);}};
 $("sCancel").onclick=()=>$("timerDlg").close();
 $("timerForm").addEventListener("submit",async e=>{
  e.preventDefault();

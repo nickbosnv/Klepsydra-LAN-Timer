@@ -342,6 +342,7 @@ app.post("/api/timers/:id/action", adminOnly, (req, res) => {
   if (t.running || t.remainingMs > 0) t.expiredAt = null; // το overtime μετράει μόνο όσο το χρονόμετρο είναι στο μηδέν
   saveState(); broadcast(); res.json(stateFor(req));
 });
+app.post("/api/flash", adminOnly, (_req, res) => { io.emit("flash"); res.json({ ok: true }); });
 app.patch("/api/settings", adminOnly, (req, res) => {
   const b = req.body || {};
   if (state.timers.some(t => t.id === b.activeTimerId)) state.settings.activeTimerId = b.activeTimerId;
