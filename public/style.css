@@ -61,3 +61,4 @@ button.pause{background:#FACC15;border-color:#FACC15;color:#1a1a1a;font-weight:7
 .view-tools{position:fixed;top:10px;left:10px;z-index:20;display:flex;gap:8px;flex-wrap:wrap;opacity:.45}.view-tools:hover,.view-tools:focus-within{opacity:1}
 .view-tools .fs-fixed{position:static;opacity:1}.view-tools .fs-fixed.on{border-color:var(--accent);color:var(--accent)}
 .blackout .view-tools,.blackout .view-tools *{visibility:visible!important}
+.view-tools .fs-fixed{min-width:34px;padding:6px 9px;font-size:15px;line-height:1}

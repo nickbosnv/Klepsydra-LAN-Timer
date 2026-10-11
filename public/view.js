@@ -50,7 +50,7 @@ $("alert").addEventListener("animationend",e=>{if(e.target.classList.contains("b
 // που κρατά την οθόνη αναμμένη και σε απλό http://192.168.x.x. Ξεκινά με το πρώτο άγγιγμα (οι browsers δεν το επιτρέπουν χωρίς κίνηση του χρήστη).
 let wakeLock = null, awakeVideo = null, awakeOn = false, awakeTried = false;
 const awakeStore = { get() { try { return localStorage.getItem("klepsydraAwake"); } catch { return null; } }, set(v) { try { localStorage.setItem("klepsydraAwake", v); } catch { /* χωρίς αποθήκευση */ } } };
-function awakeUi() { const b = $("awake"); b.classList.toggle("on", awakeOn); b.setAttribute("aria-pressed", String(awakeOn)); b.textContent = awakeOn ? "☀ Οθόνη πάντα αναμμένη" : "☀ Να μένει αναμμένη η οθόνη"; }
+function awakeUi() { const b = $("awake"); b.classList.toggle("on", awakeOn); b.setAttribute("aria-pressed", String(awakeOn)); b.title = awakeOn ? "Η οθόνη μένει αναμμένη (πάτα για απενεργοποίηση)" : "Να μένει αναμμένη η οθόνη (δεν κλειδώνει)"; }
 // Μικρό βίντεο ~1″ που φτιάχνει ο ίδιος ο browser (mp4 στο Safari, webm στο Chrome), ώστε να παίζει παντού.
 function recordClip() {
   return new Promise(resolve => {
