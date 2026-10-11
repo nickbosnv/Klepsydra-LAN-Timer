@@ -45,3 +45,69 @@ setInterval(tick,250);
 // Κουμπί «Flash ×3» του Dashboard: τρεις παλμοί στην οθόνη.
 socket.on("flash",()=>{const a=$("alert");a.classList.remove("burst");void a.offsetWidth;a.classList.add("burst");});
 $("alert").addEventListener("animationend",e=>{if(e.target.classList.contains("burst"))e.target.classList.remove("burst");});
+
+// Να μένει ανοιχτή η οθόνη (tablet): 1) Screen Wake Lock API (χρειάζεται HTTPS ή localhost)· 2) αλλιώς κρυφό βίντεο σε επανάληψη,
+// που κρατά την οθόνη αναμμένη και σε απλό http://192.168.x.x. Ξεκινά με το πρώτο άγγιγμα (οι browsers δεν το επιτρέπουν χωρίς κίνηση του χρήστη).
+let wakeLock = null, awakeVideo = null, awakeOn = false, awakeTried = false;
+const awakeStore = { get() { try { return localStorage.getItem("klepsydraAwake"); } catch { return null; } }, set(v) { try { localStorage.setItem("klepsydraAwake", v); } catch { /* χωρίς αποθήκευση */ } } };
+function awakeUi() { const b = $("awake"); b.classList.toggle("on", awakeOn); b.setAttribute("aria-pressed", String(awakeOn)); b.textContent = awakeOn ? "☀ Οθόνη πάντα αναμμένη" : "☀ Να μένει αναμμένη η οθόνη"; }
+// Μικρό βίντεο ~1″ που φτιάχνει ο ίδιος ο browser (mp4 στο Safari, webm στο Chrome), ώστε να παίζει παντού.
+function recordClip() {
+  return new Promise(resolve => {
+    try {
+      const c = document.createElement("canvas"); c.width = c.height = 16;
+      const g = c.getContext("2d"), type = window.MediaRecorder && ["video/mp4", "video/webm;codecs=vp8", "video/webm"].find(t => MediaRecorder.isTypeSupported(t));
+      if (!type || !c.captureStream) return resolve(null);
+      const rec = new MediaRecorder(c.captureStream(10), { mimeType: type }), chunks = [];
+      rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+      rec.onstop = () => resolve(chunks.length ? new Blob(chunks, { type }) : null);
+      rec.onerror = () => resolve(null);
+      rec.start();
+      let n = 0;
+      const iv = setInterval(() => { g.fillStyle = n++ % 2 ? "#000" : "#020202"; g.fillRect(0, 0, 16, 16); if (n > 14) { clearInterval(iv); rec.stop(); } }, 80);
+    } catch { resolve(null); }
+  });
+}
+async function startVideo() {
+  if (awakeVideo) { try { await awakeVideo.play(); return true; } catch { return false; } }
+  const v = document.createElement("video");
+  v.setAttribute("playsinline", ""); v.muted = true; v.loop = true; v.setAttribute("aria-hidden", "true");
+  v.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:.02;pointer-events:none;z-index:-1";
+  const blob = await recordClip();
+  if (blob) v.src = URL.createObjectURL(blob);
+  else { // χωρίς MediaRecorder: ζωντανή ροή από canvas
+    const c = document.createElement("canvas"); c.width = c.height = 16;
+    if (!c.captureStream) return false;
+    const g = c.getContext("2d"); let n = 0; setInterval(() => { g.fillStyle = n++ % 2 ? "#000" : "#020202"; g.fillRect(0, 0, 16, 16); }, 500);
+    v.srcObject = c.captureStream(5);
+  }
+  document.body.appendChild(v);
+  try { await v.play(); awakeVideo = v; return true; } catch { v.remove(); return false; }
+}
+async function enableAwake() {
+  let ok = false;
+  if (navigator.wakeLock) {
+    try { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => { wakeLock = null; }); ok = true; } catch { /* π.χ. χαμηλή μπαταρία */ }
+  }
+  if (!ok) ok = await startVideo();
+  awakeOn = ok; awakeUi();
+  return ok;
+}
+function disableAwake() {
+  awakeOn = false;
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  if (awakeVideo) awakeVideo.pause();
+  awakeUi();
+}
+$("awake").onclick = async () => {
+  if (awakeOn) { awakeStore.set("0"); disableAwake(); } else { awakeStore.set("1"); await enableAwake(); }
+};
+// Το πρώτο άγγιγμα οπουδήποτε ενεργοποιεί την παραμονή (εκτός αν ο χρήστης την έχει κλείσει).
+addEventListener("pointerdown", () => { if (!awakeTried && awakeStore.get() !== "0") { awakeTried = true; enableAwake(); } }, { once: false });
+// Το wake lock χάνεται όταν η σελίδα κρυφτεί (π.χ. αλλαγή εφαρμογής)· επανασύνδεση όταν ξαναφανεί.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !awakeOn) return;
+  if (awakeVideo && awakeVideo.paused) awakeVideo.play().catch(() => {});
+  if (navigator.wakeLock && !wakeLock && !awakeVideo) enableAwake();
+});
+awakeUi();

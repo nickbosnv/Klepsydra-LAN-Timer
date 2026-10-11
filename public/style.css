@@ -58,3 +58,6 @@ button.toggle.on{background:var(--accent);border-color:var(--accent);color:#0616
 .brand-text{font-family:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1;color:var(--text)}.brand-text b{font-weight:800;color:var(--sand)}
 .brand-lg{justify-content:center;gap:14px;margin-bottom:4px}.brand-lg .mark{width:72px;height:72px;border-radius:18px}.brand-lg .brand-text{font-size:38px}
 button.pause{background:#FACC15;border-color:#FACC15;color:#1a1a1a;font-weight:700}button.reset{background:#F27A1A;border-color:#F27A1A;color:#1a1a1a;font-weight:700}
+.view-tools{position:fixed;top:10px;left:10px;z-index:20;display:flex;gap:8px;flex-wrap:wrap;opacity:.45}.view-tools:hover,.view-tools:focus-within{opacity:1}
+.view-tools .fs-fixed{position:static;opacity:1}.view-tools .fs-fixed.on{border-color:var(--accent);color:var(--accent)}
+.blackout .view-tools,.blackout .view-tools *{visibility:visible!important}
